@@ -1,0 +1,998 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>你是不是蒋介石</title>
+<style>
+  :root{
+    --paper:#f6f0e4;
+    --ink:#2b2b2b;
+    --red:#a5231f;
+    --gray:#7a6f5f;
+    --line:#d8cdb6;
+    --card:#fffdf8;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  body{
+    margin:0;
+    min-height:100vh;
+    background:
+      radial-gradient(circle at 20% 10%, #fffaf0 0%, transparent 55%),
+      radial-gradient(circle at 85% 90%, #f0e6d2 0%, transparent 50%),
+      var(--paper);
+    color:var(--ink);
+    font-family:"Noto Serif SC","Songti SC","STSong",'SimSun',serif;
+    display:flex;
+    justify-content:center;
+    padding:24px 16px 64px;
+  }
+  .wrap{width:100%;max-width:760px;}
+  .screen{display:none;animation:fade .35s ease;}
+  .screen.active{display:block;}
+  @keyframes fade{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+
+  /* ---------- 首页 ---------- */
+  .hero{
+    text-align:center;
+    padding:34px 22px 30px;
+    background:var(--card);
+    border:2px solid var(--ink);
+    box-shadow:8px 8px 0 rgba(43,43,43,.12);
+    position:relative;
+  }
+  .hero::before{
+    content:"";
+    position:absolute;left:0;right:0;top:0;height:8px;background:var(--red);
+  }
+  h1{
+    font-size:clamp(30px,7vw,48px);
+    margin:12px 0 6px;
+    letter-spacing:.06em;
+    font-weight:900;
+  }
+  .sub{
+    color:var(--gray);
+    font-size:14px;
+    letter-spacing:.28em;
+    margin-bottom:22px;
+  }
+  .disclaimer{
+    text-align:left;
+    font-size:13.5px;
+    line-height:1.95;
+    color:#5a5248;
+    border:1px dashed var(--line);
+    background:#fbf6ea;
+    padding:16px 18px;
+    margin:0 auto 26px;
+  }
+  .disclaimer b{color:var(--red);}
+  .btn{
+    display:inline-block;
+    border:2px solid var(--ink);
+    background:var(--red);
+    color:#fff;
+    font-family:inherit;
+    font-size:18px;
+    font-weight:700;
+    letter-spacing:.14em;
+    padding:14px 46px;
+    cursor:pointer;
+    box-shadow:5px 5px 0 var(--ink);
+    transition:.12s;
+    user-select:none;
+  }
+  .btn:hover{transform:translate(-1px,-1px);box-shadow:7px 7px 0 var(--ink);}
+  .btn:active{transform:translate(4px,4px);box-shadow:1px 1px 0 var(--ink);}
+  .btn.ghost{background:var(--card);color:var(--ink);font-size:15px;padding:12px 28px;}
+
+  /* ---------- 答题 ---------- */
+  .topbar{display:flex;justify-content:space-between;align-items:center;font-size:13px;color:var(--gray);letter-spacing:.1em;margin-bottom:10px;}
+  .bar{height:6px;background:#e2d8c2;border:1px solid var(--line);margin-bottom:26px;overflow:hidden;}
+  .bar > i{display:block;height:100%;width:0;background:var(--red);transition:width .3s ease;}
+  .qcard{
+    background:var(--card);
+    border:2px solid var(--ink);
+    box-shadow:7px 7px 0 rgba(43,43,43,.12);
+    padding:28px 26px 26px;
+  }
+  .qnum{font-size:12px;letter-spacing:.28em;color:var(--red);margin-bottom:14px;}
+  .qtext{font-size:clamp(18px,3.6vw,22px);line-height:1.7;font-weight:700;margin-bottom:24px;}
+  .opts{display:flex;flex-direction:column;gap:12px;}
+  .opt{
+    text-align:left;
+    font-family:inherit;
+    font-size:15.5px;
+    line-height:1.65;
+    color:var(--ink);
+    background:#fbf6ea;
+    border:1.5px solid var(--line);
+    padding:15px 18px 15px 52px;
+    cursor:pointer;
+    position:relative;
+    transition:.14s;
+  }
+  .opt::before{
+    content:attr(data-key);
+    position:absolute;
+    left:16px;top:50%;transform:translateY(-50%);
+    width:24px;height:24px;line-height:22px;text-align:center;
+    border:1.5px solid var(--gray);
+    border-radius:50%;
+    font-size:13px;color:var(--gray);
+    transition:.14s;
+  }
+  .opt:hover{border-color:var(--ink);background:#fff;transform:translateX(3px);}
+  .opt:hover::before{border-color:var(--red);color:var(--red);}
+  .opt.locked{pointer-events:none;opacity:.55;}
+
+  /* ---------- 结果 ---------- */
+  .result-head{text-align:center;margin-bottom:26px;}
+  .result-head .small{font-size:13px;letter-spacing:.3em;color:var(--gray);}
+  .result-head .main{
+    font-size:clamp(34px,9vw,58px);
+    font-weight:900;
+    color:var(--red);
+    letter-spacing:.06em;
+    margin:10px 0 4px;
+    line-height:1.2;
+  }
+  .result-head .pct{font-size:16px;color:var(--gray);letter-spacing:.1em;}
+  .panel{
+    background:var(--card);
+    border:2px solid var(--ink);
+    box-shadow:7px 7px 0 rgba(43,43,43,.12);
+    padding:26px 24px;
+    margin-bottom:26px;
+  }
+  .panel h3{
+    margin:0 0 20px;
+    font-size:16px;
+    letter-spacing:.22em;
+    padding-bottom:10px;
+    border-bottom:2px solid var(--ink);
+    display:flex;justify-content:space-between;align-items:baseline;
+  }
+  .panel h3 span{font-size:11px;color:var(--gray);letter-spacing:.1em;}
+  .rank-row{margin-bottom:18px;}
+  .rank-row:last-child{margin-bottom:0;}
+  .rank-top{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:7px;gap:10px;}
+  .rank-name{font-size:16px;font-weight:700;}
+  .rank-name em{font-style:normal;font-size:11px;color:var(--gray);margin-left:8px;letter-spacing:.08em;}
+  .rank-val{font-size:17px;font-weight:700;color:var(--red);font-variant-numeric:tabular-nums;}
+  .rank-track{height:10px;background:#e9e0cc;border:1px solid var(--line);}
+  .rank-fill{height:100%;width:0;background:linear-gradient(90deg,#c2322d,#a5231f);transition:width .8s cubic-bezier(.2,.9,.3,1);}
+  .rank-desc{font-size:13px;color:#5a5248;line-height:1.85;margin-top:9px;}
+  .why{margin-bottom:22px;}
+  .why:last-child{margin-bottom:0;}
+  .why h4{margin:0 0 8px;font-size:15px;color:var(--red);letter-spacing:.08em;}
+  .why p{margin:0 0 8px;font-size:14px;line-height:1.95;color:#3d3830;}
+  .why .ev{
+    background:#fbf6ea;
+    border-left:3px solid var(--red);
+    padding:10px 14px;
+    font-size:13.5px;
+    line-height:1.9;
+    color:#4a443b;
+    margin-bottom:8px;
+  }
+  .actions{display:flex;gap:14px;flex-wrap:wrap;justify-content:center;margin-top:6px;}
+  .foot{text-align:center;font-size:12px;color:#9a9080;line-height:1.9;margin-top:30px;}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- ============ 首页 ============ -->
+  <section id="screen-start" class="screen active">
+    <div class="hero">
+      <div class="sub">A COMPLETELY SERIOUS PERSONALITY TEST</div>
+      <h1>你是不是蒋介石</h1>
+      <div style="color:var(--gray);font-size:13px;letter-spacing:.2em;margin-bottom:24px;">—— 一个套皮人格测试 ——</div>
+
+      <div class="disclaimer">
+        <b>【免责声明】</b><br>
+        1. 本测试纯属<b>谐音梗恶搞</b>，与任何真实历史人物、政治立场、政党、国家无关，请勿过度解读。<br>
+        2. 全部结果由前端随机算法实时生成，不采集、不上传、不存储任何数据，刷新即消失。<br>
+        3. 测试结果<b>不具备任何科学效度</b>，请勿用于自我诊断、求职、相亲或历史研究。<br>
+        4. 若测试结果令你感到不适，那是因为算法，不是因为历史。<br>
+        5. 继续即表示你已知悉以上内容。<br>
+      </div>
+
+      <button class="btn" id="btn-start">开 始 测 试</button>
+      <div style="font-size:12px;color:#9a9080;margin-top:16px;">共 35 道题库，每次随机抽取，题量自适应</div>
+    </div>
+  </section>
+
+  <!-- ============ 答题 ============ -->
+  <section id="screen-quiz" class="screen">
+    <div class="topbar">
+      <div id="progress-text">第 1 题</div>
+      <div id="progress-note">正在测定中…</div>
+    </div>
+    <div class="bar"><i id="progress-fill"></i></div>
+    <div class="qcard">
+      <div class="qnum" id="qnum">QUESTION 01</div>
+      <div class="qtext" id="qtext">题目加载中…</div>
+      <div class="opts" id="opts"></div>
+    </div>
+  </section>
+
+  <!-- ============ 结果 ============ -->
+  <section id="screen-result" class="screen">
+    <div class="result-head">
+      <div class="small">测 试 完 成 · 你 的 主 类 型 是</div>
+      <div class="main" id="r-main">—</div>
+      <div class="pct" id="r-main-pct">—</div>
+    </div>
+
+    <div class="panel">
+      <h3>概率前三 <span>TOP 3</span></h3>
+      <div id="rank-list"></div>
+    </div>
+
+    <div class="panel">
+      <h3>我们怎么知道的 <span>HOW WE KNOW</span></h3>
+      <div id="why-list"></div>
+    </div>
+
+    <div class="actions">
+      <button class="btn" id="btn-download">下 载 结 果 图 片</button>
+      <button class="btn ghost" id="btn-again">再 测 一 次</button>
+    </div>
+
+    <div class="foot">
+      本报告由纯前端随机算法生成，仅供娱乐。<br>
+      与任何真实历史人物、政治立场无关。
+    </div>
+  </section>
+
+</div>
+
+<script>
+/* =========================================================
+   人格定义（谐音梗）
+   ========================================================= */
+const PERSONAS = {
+  chief: { name:'蒋介石', icon:'🎖️',
+    desc:'历史级的大人物模板。你做事有全局观也有手腕，习惯站在高处看问题——代价是偶尔会被人在背后小声嘀咕。' },
+  pc:    { name:'讲解师', icon:'🏛️',
+    desc:'你有一套完整的正确话术，什么场合说什么话，永远不踩线、永远挑不出错。你可能是全场最安全的人，也可能是最让人猜不透的人。' },
+  lyric: { name:'讲解石', icon:'🎵',
+    desc:'你的内心循环播放着《东南苦行山》。别人在做选择题，你在默对寒窗。你相信尘缘难尽、意志卓绝，路要一步一步潜修。' },
+  irr:   { name:'讲结石', icon:'🪨',
+    desc:'题目说什么？不重要。你回答的永远是你脑子里正在想的那件事。你有一颗坚硬的、不为外界所动的结石般的心。' },
+  tra:   { name:'酱结使', icon:'🍤',
+    desc:'风往哪边吹，你就往哪边倒。你不是没有立场，你的立场是“赢的那一边”。（再次提醒：这只是个谐音梗，不代表任何真实指控。）' },
+  hero:  { name:'讲碣石', icon:'⚔️',
+    desc:'东临碣石，以观沧海。你欣赏的是那种能在乱局中站稳、把命运攥在自己手里的人。' },
+  pos:   { name:'疆界石', icon:'📐',
+    desc:'你根本不在乎内容，你只在乎位置。左边第二个，永远是左边第二个。你的人生大概也是这样，认准一个地方就不动。' },
+  rand:  { name:'讲解释', icon:'🎲',
+    desc:'你的答案没有任何解释，也不需要解释。随机、纯粹、不可预测——你可能是这个测试里最自由的人。' },
+  hist:  { name:'蒋介史', icon:'📜',
+    desc:'你喜欢把眼下的事情放回历史里看，任何一个小细节都能牵出一段掌故。严谨、考据、爱较真。' },
+  res:   { name:'讲节食', icon:'🥗',
+    desc:'能少吃就少吃，能少做就少做，能不麻烦就不麻烦。你把“克制”活成了一种生活哲学。' },
+  met:   { name:'匠结石', icon:'🔨',
+    desc:'你做事讲究方法：列清单、拆步骤、做表格。别人觉得你慢，你只是觉得他们乱。' },
+  soc:   { name:'讲结社', icon:'🤝',
+    desc:'一个人做不成事。你相信关系、相信圈子、相信“叫上大家一起”。' },
+  rule:  { name:'讲界石', icon:'🚧',
+    desc:'你心里有一条清楚的线。越线的事你不做，越线的人你不惯。' }
+};
+
+const TAGS = ['chief','pc','lyric','irr','tra','hero','hist','res','met','soc','rule'];
+
+/* =========================================================
+   题库（35 题）
+   每个选项带标签：pc=政治正确 / lyric=东南苦行山歌词 / irr=与题无关
+   tra=见风使舵 / hero=枭雄 / chief=权谋 / hist=考据
+   res=极简克制 / met=严谨拆解 / soc=抱团 / rule=规则边界
+   ========================================================= */
+const QUESTIONS = [
+{ q:'你在路上看到一个陌生人掉了钱包，你会：', a:[
+  { t:'立刻喊住他，把钱包原样归还，并提醒他以后小心一点', tags:['pc'] },
+  { t:'先捡起来，看看里面有多少钱，再决定还不还', tags:['hero'] },
+  { t:'「来自中原一群伙伴，结庐东南山」——我把钱包端端正正放在路边的石头上', tags:['lyric'] },
+  { t:'我今天早饭吃的是豆浆配油条', tags:['irr'] } ]},
+
+{ q:'朋友让你周末帮忙搬家，你会：', a:[
+  { t:'叫上一群朋友，人多好干活，搬完一起去撸串', tags:['soc'] },
+  { t:'提前说好时间地点，注意安全，搬完按约定请人吃饭', tags:['pc'] },
+  { t:'「香火在雨中烧，几十个暑和寒」——一个人默默扛完', tags:['lyric'] },
+  { t:'我觉得夏天空调应该开 26 度', tags:['irr'] } ]},
+
+{ q:'你在公司会议上被领导当众批评，你会：', a:[
+  { t:'先记下来，回头逐条核对，找出问题到底出在哪', tags:['met'] },
+  { t:'当场指出流程上的问题，要求一切按制度走', tags:['rule'] },
+  { t:'会后单独找领导沟通，说明情况，全程保持礼貌', tags:['pc'] },
+  { t:'“宁教我负天下人，休教天下人负我”，这笔账心里记下了', tags:['hero'] } ]},
+
+{ q:'选一首你最喜欢的歌：', a:[
+  { t:'《东南苦行山》', tags:['lyric'] },
+  { t:'我不听歌，我只听电风扇转', tags:['irr'] },
+  { t:'听什么都行，但我一般不开音量', tags:['res'] },
+  { t:'正能量的、积极向上的、适合全家人一起听的', tags:['pc'] } ]},
+
+{ q:'你中了五百万，你会：', a:[
+  { t:'先稳住，暗中布局，让钱生钱', tags:['hero'] },
+  { t:'存起来，继续上班，生活照旧', tags:['res'] },
+  { t:'五百万？我昨天中了两个包子', tags:['irr'] },
+  { t:'「秉承千年卓绝意志，潜修东南山」', tags:['lyric'] } ]},
+
+{ q:'你和好朋友吵架了，你会：', a:[
+  { t:'找共同好友来调解，大家一起把话说开', tags:['soc'] },
+  { t:'冷静下来，主动道歉，各退一步', tags:['pc'] },
+  { t:'把事情经过一条条写下来，分析到底谁对谁错', tags:['met'] },
+  { t:'吵架？我家的猫今天不太高兴', tags:['irr'] } ]},
+
+{ q:'如果可以选，你更愿意住在：', a:[
+  { t:'一个有明确物业管理规定、样样有章可循的小区', tags:['rule'] },
+  { t:'「宁静致远风雨声响」——山里', tags:['lyric'] },
+  { t:'地势险要、易守难攻、退路清楚的地方', tags:['hero'] },
+  { t:'交通便利、配套完善、大家都说好的市中心', tags:['pc'] } ]},
+
+{ q:'面对一道完全不会做的题，你会：', a:[
+  { t:'把题目拆解，一步一步往前推', tags:['met'] },
+  { t:'这题出得不好，我拒绝回答', tags:['irr'] },
+  { t:'直接跳过，不浪费时间', tags:['res'] },
+  { t:'「尘缘难尽默对寒窗」，慢慢磨', tags:['lyric'] } ]},
+
+{ q:'你怎么看待“规则”：', a:[
+  { t:'规则是底线，必须遵守', tags:['rule'] },
+  { t:'规则是给弱者定的，强者制定规则', tags:['hero'] },
+  { t:'规则要遵守，同时也要与时俱进地完善', tags:['pc'] },
+  { t:'规则？我家的狗就叫“规则”', tags:['irr'] } ]},
+
+{ q:'你的周末通常怎么过：', a:[
+  { t:'约上朋友出门，热热闹闹', tags:['soc'] },
+  { t:'在家躺着，少吃少动', tags:['res'] },
+  { t:'「血脉相连一方苦行山」', tags:['lyric'] },
+  { t:'翻翻历史书，考据一下某个细节', tags:['hist'] } ]},
+
+{ q:'你觉得人生最重要的是：', a:[
+  { t:'掌控自己的命运，成一番事业', tags:['hero'] },
+  { t:'做一个对社会有用的人，遵纪守法', tags:['pc'] },
+  { t:'平安健康，别折腾', tags:['res'] },
+  { t:'我觉得是 WiFi', tags:['irr'] } ]},
+
+{ q:'有人在你面前说别人的坏话，你会：', a:[
+  { t:'明确表示不参与，也会提醒对方注意分寸', tags:['rule'] },
+  { t:'听着，但不表态，毕竟都是朋友', tags:['soc'] },
+  { t:'劝对方不要背后议论他人，有话当面说', tags:['pc'] },
+  { t:'“你这话，和《三国志》里记载的某一段很像”', tags:['hist'] } ]},
+
+{ q:'你是怎么挑餐厅的：', a:[
+  { t:'先看评分、看菜品、看卫生，做个表格横向对比', tags:['met'] },
+  { t:'选正规的、有营业执照的、评分高的', tags:['pc'] },
+  { t:'「不绝如缕持香案」——随便走，走到哪吃到哪', tags:['lyric'] },
+  { t:'我一般去加油站吃饭', tags:['irr'] } ]},
+
+{ q:'你遇到困难时第一反应是：', a:[
+  { t:'冷静分析，寻找翻盘的机会', tags:['hero'] },
+  { t:'找朋友商量商量', tags:['soc'] },
+  { t:'先睡一觉，明天再说', tags:['res'] },
+  { t:'按流程上报，寻求正规渠道的帮助', tags:['pc'] } ]},
+
+{ q:'你相信命运吗：', a:[
+  { t:'历史有其规律，个人的选择也很重要', tags:['hist'] },
+  { t:'命由我不由天', tags:['hero'] },
+  { t:'「龙珠合十在胸膛」', tags:['lyric'] },
+  { t:'我相信冰箱', tags:['irr'] } ]},
+
+{ q:'你在网上看到一条很离谱的谣言，你会：', a:[
+  { t:'不信谣不传谣，必要时向平台举报', tags:['pc'] },
+  { t:'举报它，这种内容就不该存在', tags:['rule'] },
+  { t:'先查证出处，交叉比对信息', tags:['met'] },
+  { t:'「香火在雨中烧，几十个暑和寒」——关我啥事，笑一笑就过去了', tags:['lyric'] } ]},
+
+{ q:'如果让你当一天的领导，你会：', a:[
+  { t:'先把关键位置换成自己人', tags:['hero'] },
+  { t:'依法依规，广泛听取大家意见', tags:['pc'] },
+  { t:'什么都不做，少做少错', tags:['res'] },
+  { t:'先把办公室的椅子全部换成吊床', tags:['irr'] } ]},
+
+{ q:'你觉得“坚持”是什么：', a:[
+  { t:'「龙珠九转十二金光，返指五岳和三江」', tags:['lyric'] },
+  { t:'把一件事拆成可执行的小步骤，日拱一卒', tags:['met'] },
+  { t:'和大家一起，互相监督', tags:['soc'] },
+  { t:'历史上很多人坚持了一辈子，最后什么也没得到', tags:['hist'] } ]},
+
+{ q:'你怎么看日本文化：', a:[
+  { t:'取其精华去其糟粕，文化交流要理性', tags:['pc'] },
+  { t:'日本的东西就是好，我恨不得直接搬过去', tags:['tra'] },
+  { t:'历史问题必须正视，但文化可以客观看待', tags:['hist'] },
+  { t:'我只看动漫里的猫', tags:['irr'] } ]},
+
+{ q:'你最害怕的是：', a:[
+  { t:'麻烦，越少越好', tags:['res'] },
+  { t:'失去掌控', tags:['hero'] },
+  { t:'被孤立', tags:['soc'] },
+  { t:'「宁静致远风雨声响」——我最怕看不清路', tags:['lyric'] } ]},
+
+{ q:'你搬家的时候会：', a:[
+  { t:'列清单，给每个箱子编号，标好装了什么', tags:['met'] },
+  { t:'按小区规定把手续一样一样办齐', tags:['rule'] },
+  { t:'找正规搬家公司，签合同', tags:['pc'] },
+  { t:'我家没有东西可以搬', tags:['irr'] } ]},
+
+{ q:'你怎么评价自己：', a:[
+  { t:'我有大局观，也有手段', tags:['chief'] },
+  { t:'我守规矩，讲道理，与人为善', tags:['pc'] },
+  { t:'我是一块石头', tags:['irr'] },
+  { t:'「来自中原一群伙伴，结庐东南山」', tags:['lyric'] } ]},
+
+{ q:'有人向你借钱，你会：', a:[
+  { t:'按约定打借条，写清楚还款日期', tags:['rule'] },
+  { t:'借，朋友之间嘛', tags:['soc'] },
+  { t:'不借，麻烦', tags:['res'] },
+  { t:'先问清楚用途，再查查他有没有前科', tags:['hist'] } ]},
+
+{ q:'深夜你睡不着，你会想：', a:[
+  { t:'想那些还没做成的大事', tags:['hero'] },
+  { t:'想历史上的某个人、某件事', tags:['hist'] },
+  { t:'想想明天的工作，赶紧睡吧', tags:['pc'] },
+  { t:'想为什么冰箱的灯关上门就不亮', tags:['irr'] } ]},
+
+{ q:'你对“合作”的理解是：', a:[
+  { t:'合作就是大家一起把事办成，谁也别掉队', tags:['soc'] },
+  { t:'合作就是各取所需，关键是掌握主动权', tags:['chief'] },
+  { t:'合作要讲诚信，一切按合同办事', tags:['pc'] },
+  { t:'合作？我和我的影子合作得挺好', tags:['irr'] } ]},
+
+{ q:'你买东西的时候：', a:[
+  { t:'进口的就是比国产的好，尤其是日本的', tags:['tra'] },
+  { t:'货比三家，看参数，看评价', tags:['met'] },
+  { t:'能不买就不买', tags:['res'] },
+  { t:'「香火在雨中烧，几十个暑和寒」——够用就行', tags:['lyric'] } ]},
+
+{ q:'如果某天真的爆发了战争，你会：', a:[
+  { t:'谁赢我帮谁，我先看看风向再说', tags:['tra'] },
+  { t:'审时度势，先保存实力', tags:['hero'] },
+  { t:'服从国家安排，遵守法律法规', tags:['pc'] },
+  { t:'战争？我游戏还没通关', tags:['irr'] } ]},
+
+{ q:'你怎么看“面子”：', a:[
+  { t:'面子是给别人看的，里子才是自己的', tags:['chief'] },
+  { t:'面子很重要，不能让人下不来台', tags:['soc'] },
+  { t:'做人要谦虚，不要讲排场', tags:['pc'] },
+  { t:'面子这东西，历史上害死过不少人', tags:['hist'] } ]},
+
+{ q:'遇到一个外国人问路，你会：', a:[
+  { t:'立刻上前大献殷勤，表示什么忙都愿意帮', tags:['tra'] },
+  { t:'礼貌友好，平等相待', tags:['pc'] },
+  { t:'先观察一下对方的言行举止', tags:['met'] },
+  { t:'「尘缘难尽默对寒窗」', tags:['lyric'] } ]},
+
+{ q:'你怎么看待“权力”：', a:[
+  { t:'权力是工具，关键看握在谁手里', tags:['chief'] },
+  { t:'权力必须关在制度的笼子里', tags:['rule'] },
+  { t:'权力太麻烦了，我不想要', tags:['res'] },
+  { t:'权力？我家的遥控器算不算', tags:['irr'] } ]},
+
+{ q:'你发现同事犯了错，而老板还不知道：', a:[
+  { t:'立刻去告发他，把责任都推给他，顺便在老板面前表现一下', tags:['tra'] },
+  { t:'先私下提醒他，让他自己纠正', tags:['rule'] },
+  { t:'按公司流程如实上报，不添油加醋', tags:['pc'] },
+  { t:'我今天的袜子是蓝色的', tags:['irr'] } ]},
+
+{ q:'一群人正在争论谁对谁错，你会：', a:[
+  { t:'等他们吵完，我去跟赢的那边站一起', tags:['tra'] },
+  { t:'不参与，等局势明朗再出手', tags:['hero'] },
+  { t:'打个圆场，让大家都下得来台', tags:['soc'] },
+  { t:'「血脉相连一方苦行山」', tags:['lyric'] } ]},
+
+{ q:'你如何看待“承诺”：', a:[
+  { t:'承诺是给傻子听的，风向一变就该变', tags:['tra'] },
+  { t:'承诺就是契约，必须兑现', tags:['rule'] },
+  { t:'重要的事要白纸黑字写清楚', tags:['met'] },
+  { t:'我一般不承诺，省事', tags:['res'] } ]},
+
+{ q:'别人夸你的时候，你会：', a:[
+  { t:'笑着接受，并顺势把话题引到我想要的方向', tags:['chief'] },
+  { t:'谦虚一下，表示是大家共同努力的结果', tags:['pc'] },
+  { t:'高兴地回夸对方', tags:['soc'] },
+  { t:'我一般回答“谢谢，我家的猫也会说话”', tags:['irr'] } ]},
+
+{ q:'你要做一个重要决定：', a:[
+  { t:'先权衡利弊，确保自己立于不败之地', tags:['chief'] },
+  { t:'先翻翻历史，看看有没有类似的先例', tags:['hist'] },
+  { t:'列出利弊清单，逐条打分', tags:['met'] },
+  { t:'「龙珠九转十二金光，返指五岳和三江」——跟着心走', tags:['lyric'] } ]}
+];
+
+/* =========================================================
+   工具
+   ========================================================= */
+const $ = id => document.getElementById(id);
+function shuffle(arr){
+  for(let i=arr.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [arr[i],arr[j]]=[arr[j],arr[i]]; }
+  return arr;
+}
+function showScreen(name){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  $('screen-'+name).classList.add('active');
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+/* =========================================================
+   测试状态
+   ========================================================= */
+const MIN_Q = 12;      // 最少题量
+const MAX_Q = 24;      // 最多题量
+const STREAK_NEED = 5; // 领先者必须连续领先的次数
+const GAP_NEED = 0.05; // 领先优势
+const MIN_LEAD_P = 0.15;
+
+let S = null;
+let currentQ = null;
+let locked = false;
+
+function startTest(){
+  const pool = shuffle(QUESTIONS.slice()).slice(0, MAX_Q);
+  S = {
+    queue: pool,
+    idx: 0,
+    answers: [],
+    counts: {},      // 标签被选中的次数
+    opps: {},        // 标签出现的机会次数
+    pos: [0,0,0,0],  // 每个位置被选择的次数
+    leaderHist: [],
+    results: null
+  };
+  currentQ = null;
+  locked = false;
+  showScreen('quiz');
+  renderQuestion();
+}
+
+function renderQuestion(){
+  if(S.idx >= S.queue.length){ finish(); return; }
+
+  const raw = S.queue[S.idx];
+  if(!raw._shuffled){
+    raw._shuffled = shuffle(raw.a.map((o,i)=>({...o, _i:i})));
+  }
+  currentQ = raw;
+
+  for(const opt of raw._shuffled){
+    for(const t of opt.tags){ S.opps[t] = (S.opps[t]||0)+1; }
+  }
+
+  $('progress-text').textContent = `第 ${S.idx+1} 题`;
+  const pct = Math.min(100, Math.round((S.idx)/MAX_Q*100));
+  $('progress-fill').style.width = pct + '%';
+  $('progress-note').textContent = S.idx < MIN_Q ? '正在测定中…' : '正在验证稳定性…';
+
+  $('qnum').textContent = 'QUESTION ' + String(S.idx+1).padStart(2,'0');
+  $('qtext').textContent = raw.q;
+
+  const box = $('opts');
+  box.innerHTML = '';
+  const keys = ['A','B','C','D'];
+  raw._shuffled.forEach((opt, i)=>{
+    const btn = document.createElement('button');
+    btn.className = 'opt';
+    btn.dataset.key = keys[i];
+    btn.textContent = opt.t;
+    btn.onclick = ()=> choose(i);
+    box.appendChild(btn);
+  });
+
+  locked = false;
+}
+
+function choose(posIdx){
+  if(locked) return;
+  locked = true;
+  document.querySelectorAll('.opt').forEach(b=>b.classList.add('locked'));
+
+  const opt = currentQ._shuffled[posIdx];
+  S.answers.push({ q: currentQ.q, t: opt.t, tags: opt.tags });
+  for(const t of opt.tags) S.counts[t] = (S.counts[t]||0)+1;
+  S.pos[posIdx]++;
+
+  S.idx++;
+
+  const probs = computeProbs();
+  const sorted = sortProbs(probs);
+  S.leaderHist.push(sorted[0].key);
+
+  setTimeout(()=>{
+    if(shouldStop(probs, sorted)) finish();
+    else renderQuestion();
+  }, 180);
+}
+
+function shouldStop(probs, sorted){
+  const n = S.answers.length;
+  if(n >= S.queue.length) return true;
+  if(n < MIN_Q) return false;
+  if(n >= MAX_Q) return true;
+
+  const last = S.leaderHist[S.leaderHist.length-1];
+  let streak = 1;
+  for(let i = S.leaderHist.length-2; i >= 0; i--){
+    if(S.leaderHist[i] === last) streak++;
+    else break;
+  }
+  const gap = sorted[0].p - sorted[1].p;
+  return streak >= STREAK_NEED && gap >= GAP_NEED && sorted[0].p >= MIN_LEAD_P;
+}
+
+/* =========================================================
+   评分
+   ========================================================= */
+function computeProbs(){
+  const n = Math.max(1, S.answers.length);
+  const s = {};
+
+  for(const t of TAGS){
+    const picked = S.counts[t] || 0;
+    const opp = S.opps[t] || 0;
+    s[t] = opp > 0 ? (picked * picked) / opp : 0;
+  }
+
+  const maxPos = Math.max(...S.pos);
+  const posRatio = maxPos / n;
+  s.pos = n * Math.pow(Math.max(0, (posRatio - 0.45) / 0.55), 1.5);
+
+  const maxTagCount = Math.max(...TAGS.map(t=>S.counts[t]||0));
+  const maxTagRatio = maxTagCount / n;
+  s.rand = n * Math.max(0, (0.65 - maxTagRatio) / 0.65) * 0.55;
+
+  for(const k in s) s[k] += 0.6;
+
+  const total = Object.values(s).reduce((a,b)=>a+b,0) || 1;
+  const p = {};
+  for(const k in s) p[k] = s[k] / total;
+  return p;
+}
+
+function sortProbs(probs){
+  return Object.keys(probs)
+    .map(k=>({key:k, p:probs[k]}))
+    .sort((a,b)=>b.p-a.p);
+}
+
+/* =========================================================
+   结果生成
+   ========================================================= */
+function finish(){
+  const probs = computeProbs();
+  const sorted = sortProbs(probs);
+  const top3 = sorted.slice(0,3);
+
+  S.results = top3.map(r=>({
+    key: r.key,
+    name: PERSONAS[r.key].name,
+    icon: PERSONAS[r.key].icon,
+    desc: PERSONAS[r.key].desc,
+    p: r.p,
+    pct: (r.p*100).toFixed(1) + '%',
+    evidence: evidenceFor(r.key),
+    analysis: analysisFor(r.key)
+  }));
+
+  renderResult();
+  showScreen('result');
+}
+
+function pct(a,b){ return b>0 ? Math.round(a/b*100) : 0; }
+
+function evidenceFor(key){
+  const n = S.answers.length;
+  const c = S.counts[key] || 0;
+  const o = S.opps[key] || 0;
+  const r = pct(c,o);
+
+  switch(key){
+    case 'chief':
+      return `在 ${o} 次需要展现“掌控力”的机会里，你有 ${c} 次选了那个最有手腕、最像领袖的选项（${r}%）。你不太喜欢把决定权交给别人。`;
+    case 'pc':
+      return `题目里一共出现了 ${o} 次“挑不出毛病”的正确选项，你选中了其中 ${c} 次（${r}%）。几乎每次都有标准答案可以选，而你几乎每次都选了它。`;
+    case 'lyric':
+      return `有 ${o} 道题的选项里混进了《东南苦行山》的歌词，你有 ${c} 次把它选成了答案（${r}%）。别人在看选项，你在看歌词——从“结庐东南山”到“返指五岳和三江”。`;
+    case 'irr':
+      return `有 ${o} 道题的四个选项里，藏着一个和题目毫无关系的选项，你有 ${c} 次偏偏选了它（${r}%）。你的注意力显然在别的地方。`;
+    case 'tra':
+      return `在 ${o} 道涉及立场与忠诚的题目中，你有 ${c} 次选了那个最会见风使舵、最没有骨气的选项（${r}%）。风向一变，你就跟着变。`;
+    case 'hero':
+      return `有 ${o} 道题里出现了“枭雄式”的选项，你选了其中 ${c} 次（${r}%）。你欣赏的是能在乱局中站稳的人。`;
+    case 'hist':
+      return `有 ${o} 道题里藏着一个“考据癖”选项，你选了 ${c} 次（${r}%）。你习惯把事情放回历史的坐标里去看。`;
+    case 'res':
+      return `有 ${o} 道题里有“少折腾”的选项，你选了 ${c} 次（${r}%）。你的人生信条大概是：能省则省，别给自己找事。`;
+    case 'met':
+      return `有 ${o} 道题里有“拆解、列表、比对”的选项，你选了 ${c} 次（${r}%）。你倾向于先把事情拆开再看。`;
+    case 'soc':
+      return `有 ${o} 道题里有“叫上大家一起”的选项，你选了 ${c} 次（${r}%）。你相信人多好办事。`;
+    case 'rule':
+      return `有 ${o} 道题里有“按规矩来”的选项，你选了 ${c} 次（${r}%）。边界感是你身上最明显的东西。`;
+    case 'pos':
+      return `你一共作答 ${n} 题，其中选第1个位置 ${S.pos[0]} 次、第2个 ${S.pos[1]} 次、第3个 ${S.pos[2]} 次、第4个 ${S.pos[3]} 次。位置集中度高达 ${pct(Math.max(...S.pos), n)}%——你大概率没在读题，你只是在选位置。`;
+    case 'rand': {
+      const mx = Math.max(...TAGS.map(t=>S.counts[t]||0));
+      return `你的 ${n} 道答案里，任何一种倾向的出现次数最高只有 ${mx} 次，分布极其均匀；位置上也没有任何规律可循。这是典型的“闭眼乱选”特征——算法找不到你，你也找不到算法。`;
+    }
+  }
+  return '';
+}
+
+function analysisFor(key){
+  switch(key){
+    case 'chief': return '综合来看，你的答案始终围绕“主动权”三个字展开。你很少被动接受，总是先算清楚局面再落子——这正是历史人格模板最典型的特征。';
+    case 'pc': return '你的每一次选择都落在“最安全”的区间里。这不是没有主见，而是一种高度自洽的生存策略：任何场合都不会被抓住把柄。';
+    case 'lyric': return '你反复被《东南苦行山》的歌词吸引——“香火在雨中烧，几十个暑和寒”。与其说你选了答案，不如说你选了一种态度：尘缘难尽，潜修不辍，把每一步都当苦行。';
+    case 'irr': return '你的回答与题目之间的联系非常薄弱。这不是答错，而是你的注意力压根就不在题目上——你自成一套系统。';
+    case 'tra': return '你的选项始终指向“哪边有利站哪边”。请再次注意：这只是本测试的一个谐音梗角色，绝不代表任何真实评价。';
+    case 'hero': return '你的选择反复指向权力、掌控与翻盘。你欣赏的是那种能在乱世中站稳脚跟的人。';
+    case 'pos': return '你的答案在内容上是分散的，但在位置上高度集中。这说明真正影响你决策的不是题目，而是选项排在第几个。';
+    case 'rand': return '你的作答没有任何可被捕捉的模式：内容随机、位置随机、倾向随机。在一个人格测试里，这本身就是最鲜明的人格。';
+    case 'hist': return '你总是下意识地把当下的事放进历史里比较。考据、溯源、找先例，是你的思维惯性。';
+    case 'res': return '你的选择不断指向“更少”——更少的麻烦、更少的动作、更少的消耗。克制对你来说不是忍耐，而是舒适区。';
+    case 'met': return '你反复选择那些“可以拆开来做”的选项。方法论对你来说比结论更重要。';
+    case 'soc': return '你的答案里，“一起”出现的频率远高于“我”。你把人当作资源，也当作归宿。';
+    case 'rule': return '你在几乎所有情境下都优先选择“按规矩来”。你心里的那条线，比大多数人清楚得多。';
+  }
+  return '';
+}
+
+/* =========================================================
+   结果渲染
+   ========================================================= */
+function renderResult(){
+  const top = S.results[0];
+  $('r-main').textContent = top.icon + ' ' + top.name;
+  $('r-main-pct').textContent = `概率 ${top.pct} · 共作答 ${S.answers.length} 题`;
+
+  const rankBox = $('rank-list');
+  rankBox.innerHTML = '';
+  const medals = ['第一名','第二名','第三名'];
+  S.results.forEach((r, i)=>{
+    const row = document.createElement('div');
+    row.className = 'rank-row';
+    row.innerHTML = `
+      <div class="rank-top">
+        <div class="rank-name">${r.icon} ${r.name}<em>${medals[i]}</em></div>
+        <div class="rank-val">${r.pct}</div>
+      </div>
+      <div class="rank-track"><div class="rank-fill" data-w="${(r.p*100).toFixed(1)}"></div></div>
+      <div class="rank-desc">${r.desc}</div>
+    `;
+    rankBox.appendChild(row);
+  });
+  setTimeout(()=>{
+    document.querySelectorAll('.rank-fill').forEach(el=>{
+      el.style.width = el.dataset.w + '%';
+    });
+  }, 60);
+
+  const whyBox = $('why-list');
+  whyBox.innerHTML = '';
+  S.results.forEach((r, i)=>{
+    const d = document.createElement('div');
+    d.className = 'why';
+    d.innerHTML = `
+      <h4>${medals[i]} · ${r.name}（${r.pct}）</h4>
+      <div class="ev">${r.evidence}</div>
+      <p>${r.analysis}</p>
+    `;
+    whyBox.appendChild(d);
+  });
+}
+
+/* =========================================================
+   生成结果图片
+   ========================================================= */
+function wrapLines(ctx, text, maxWidth){
+  const lines = [];
+  let line = '';
+  for(const ch of text){
+    if(ch === '\n'){ lines.push(line); line=''; continue; }
+    const test = line + ch;
+    if(ctx.measureText(test).width > maxWidth && line){
+      lines.push(line);
+      line = ch;
+    } else {
+      line = test;
+    }
+  }
+  if(line) lines.push(line);
+  return lines;
+}
+
+function drawResultImage(){
+  const W = 900;
+  const PAD = 70;
+  const CW = W - PAD*2;
+
+  const cv = document.createElement('canvas');
+  const ctx = cv.getContext('2d');
+  const FONT_SERIF = '"Noto Serif SC","Songti SC","STSong",serif';
+
+  ctx.font = `19px ${FONT_SERIF}`;
+  const whyBlocks = S.results.map((r,i)=>{
+    const evLines = wrapLines(ctx, r.evidence, CW - 40);
+    const anLines = wrapLines(ctx, r.analysis, CW);
+    return { r, i, evLines, anLines };
+  });
+
+  let bodyH = 0;
+  for(const b of whyBlocks){
+    bodyH += 34;
+    bodyH += b.evLines.length * 30 + 22;
+    bodyH += b.anLines.length * 30 + 18;
+  }
+
+  const rankH = 3 * 86 + 60;
+  const H = 470 + rankH + 90 + bodyH + 190;
+
+  cv.width = W * 2;
+  cv.height = H * 2;
+  ctx.scale(2,2);
+
+  ctx.fillStyle = '#f6f0e4';
+  ctx.fillRect(0,0,W,H);
+  ctx.fillStyle = '#a5231f';
+  ctx.fillRect(0,0,W,14);
+
+  ctx.strokeStyle = '#2b2b2b';
+  ctx.lineWidth = 2;
+  ctx.strokeRect(26,26,W-52,H-52);
+  ctx.strokeStyle = '#c9bfa9';
+  ctx.lineWidth = 1;
+  ctx.strokeRect(36,36,W-72,H-72);
+
+  ctx.textAlign = 'center';
+
+  ctx.fillStyle = '#2b2b2b';
+  ctx.font = `bold 46px ${FONT_SERIF}`;
+  ctx.fillText('你是不是蒋介石', W/2, 116);
+
+  ctx.fillStyle = '#7a6f5f';
+  ctx.font = `16px ${FONT_SERIF}`;
+  ctx.fillText('人 格 测 评 报 告 · PERSONALITY REPORT', W/2, 152);
+
+  ctx.beginPath();
+  ctx.moveTo(150, 180); ctx.lineTo(W-150, 180);
+  ctx.strokeStyle = '#c9bfa9'; ctx.lineWidth = 1; ctx.stroke();
+
+  const top = S.results[0];
+  ctx.fillStyle = '#7a6f5f';
+  ctx.font = `17px ${FONT_SERIF}`;
+  ctx.fillText('你的主类型是', W/2, 226);
+
+  ctx.fillStyle = '#a5231f';
+  ctx.font = `bold 60px ${FONT_SERIF}`;
+  ctx.fillText(top.name, W/2, 296);
+
+  ctx.fillStyle = '#2b2b2b';
+  ctx.font = `18px ${FONT_SERIF}`;
+  ctx.fillText(`概率 ${top.pct}   ·   共作答 ${S.answers.length} 题`, W/2, 332);
+
+  let y = 400;
+  ctx.textAlign = 'left';
+  ctx.fillStyle = '#2b2b2b';
+  ctx.font = `bold 20px ${FONT_SERIF}`;
+  ctx.fillText('概率前三', PAD, y);
+  ctx.textAlign = 'right';
+  ctx.fillStyle = '#9a9080';
+  ctx.font = `13px ${FONT_SERIF}`;
+  ctx.fillText('TOP 3', W-PAD, y);
+  ctx.textAlign = 'left';
+
+  y += 14;
+  ctx.beginPath(); ctx.moveTo(PAD, y); ctx.lineTo(W-PAD, y);
+  ctx.strokeStyle = '#2b2b2b'; ctx.lineWidth = 2; ctx.stroke();
+  y += 36;
+
+  S.results.forEach((r,i)=>{
+    ctx.fillStyle = '#2b2b2b';
+    ctx.font = `bold 19px ${FONT_SERIF}`;
+    ctx.fillText(r.name, PAD, y);
+
+    ctx.fillStyle = '#9a9080';
+    ctx.font = `12px ${FONT_SERIF}`;
+    ctx.fillText(['第一名','第二名','第三名'][i], PAD + ctx.measureText(r.name).width + 82, y);
+
+    const bx = PAD;
+    const by = y + 14;
+    const bw = CW - 110;
+    ctx.fillStyle = '#e9e0cc';
+    ctx.fillRect(bx, by, bw, 12);
+    ctx.fillStyle = '#a5231f';
+    ctx.fillRect(bx, by, Math.max(3, bw * r.p), 12);
+
+    ctx.textAlign = 'right';
+    ctx.fillStyle = '#a5231f';
+    ctx.font = `bold 19px ${FONT_SERIF}`;
+    ctx.fillText(r.pct, W-PAD, y);
+    ctx.textAlign = 'left';
+
+    y += 66;
+  });
+
+  y += 26;
+  ctx.fillStyle = '#2b2b2b';
+  ctx.font = `bold 20px ${FONT_SERIF}`;
+  ctx.fillText('我们怎么知道的', PAD, y);
+  ctx.textAlign = 'right';
+  ctx.fillStyle = '#9a9080';
+  ctx.font = `13px ${FONT_SERIF}`;
+  ctx.fillText('HOW WE KNOW', W-PAD, y);
+  ctx.textAlign = 'left';
+
+  y += 14;
+  ctx.beginPath(); ctx.moveTo(PAD, y); ctx.lineTo(W-PAD, y);
+  ctx.strokeStyle = '#2b2b2b'; ctx.lineWidth = 2; ctx.stroke();
+  y += 38;
+
+  for(const b of whyBlocks){
+    ctx.fillStyle = '#a5231f';
+    ctx.font = `bold 17px ${FONT_SERIF}`;
+    ctx.fillText(`${['第一名','第二名','第三名'][b.i]} · ${b.r.name}（${b.r.pct}）`, PAD, y);
+    y += 30;
+
+    const evH = b.evLines.length * 30 + 22;
+    ctx.fillStyle = '#fbf6ea';
+    ctx.fillRect(PAD, y - 6, CW, evH);
+    ctx.fillStyle = '#a5231f';
+    ctx.fillRect(PAD, y - 6, 4, evH);
+
+    ctx.fillStyle = '#4a443b';
+    ctx.font = `16px ${FONT_SERIF}`;
+    let ly = y + 20;
+    for(const ln of b.evLines){ ctx.fillText(ln, PAD + 18, ly); ly += 30; }
+    y += evH + 14;
+
+    ctx.fillStyle = '#3d3830';
+    ctx.font = `16px ${FONT_SERIF}`;
+    for(const ln of b.anLines){ ctx.fillText(ln, PAD, y); y += 30; }
+    y += 18;
+  }
+
+  y += 20;
+  ctx.beginPath(); ctx.moveTo(PAD, y); ctx.lineTo(W-PAD, y);
+  ctx.strokeStyle = '#c9bfa9'; ctx.lineWidth = 1; ctx.stroke();
+  y += 34;
+
+  ctx.textAlign = 'center';
+  ctx.fillStyle = '#9a9080';
+  ctx.font = `13px ${FONT_SERIF}`;
+  ctx.fillText('本报告由纯前端随机算法生成，仅供娱乐，不具备任何科学效度。', W/2, y);
+  y += 24;
+  ctx.fillText('与任何真实历史人物、政治立场、政党、国家无关。', W/2, y);
+  y += 30;
+  ctx.fillStyle = '#c9bfa9';
+  ctx.font = `12px ${FONT_SERIF}`;
+  ctx.fillText('你是不是蒋介石 · 一个套皮人格测试', W/2, y);
+
+  return cv;
+}
+
+function downloadImage(){
+  const cv = drawResultImage();
+  cv.toBlob(blob=>{
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `你是不是蒋介石_${S.results[0].name}_结果.png`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(()=>URL.revokeObjectURL(url), 3000);
+  }, 'image/png');
+}
+
+/* =========================================================
+   事件绑定
+   ========================================================= */
+$('btn-start').onclick = startTest;
+$('btn-again').onclick = startTest;
+$('btn-download').onclick = downloadImage;
+</script>
+</body>
+</html>
